@@ -418,11 +418,7 @@ public class SignPdfForm extends javax.swing.JFrame implements SignResultListene
 	                justName = justName.substring(0,dotPosition);
 	            }
 
-	            StringBuilder newName = new StringBuilder(justName.length() + 8);
-	            newName.append(justName);
-	            newName.append("_signed.pdf");
-
-	            File signedPDF = new File(f.getParentFile(),newName.toString());
+	            File signedPDF = new File(f.getParentFile(),justName + "_signed.pdf");
 
 	            tfOutPdfFile.setText(signedPDF.getPath());
 	        }
