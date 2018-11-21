@@ -140,8 +140,6 @@ public class SignPdfForm extends javax.swing.JFrame implements SignResultListene
 
 		updateFromOptions();
 
-		tfInPdfFile.setDragEnabled(true);
-
 		TransferHandler handler =   new TransferHandler() {
 		    @Override public boolean canImport(TransferHandler.TransferSupport info) {
 		        return info.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
@@ -167,6 +165,11 @@ public class SignPdfForm extends javax.swing.JFrame implements SignResultListene
 		    }
 		};
 
+		tfInPdfFile.getDocument().addDocumentListener(new DocumentListener() {
+		    @Override public void insertUpdate(DocumentEvent e)  { fillOutputPdfName(); }
+		    @Override public void removeUpdate(DocumentEvent e)  { fillOutputPdfName(); }
+		    @Override public void changedUpdate(DocumentEvent e) { fillOutputPdfName(); }
+		});
 		tfInPdfFile.setTransferHandler(handler);
 		this.setTransferHandler(handler);
 	}
@@ -804,11 +807,6 @@ public class SignPdfForm extends javax.swing.JFrame implements SignResultListene
 		gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
 		gridBagConstraints.insets = new java.awt.Insets(2, 5, 2, 10);
 		getContentPane().add(lblInPdfFile, gridBagConstraints);
-		tfInPdfFile.getDocument().addDocumentListener(new DocumentListener() {
-		    @Override public void insertUpdate(DocumentEvent e)  { fillOutputPdfName(); }
-		    @Override public void removeUpdate(DocumentEvent e)  { fillOutputPdfName(); }
-		    @Override public void changedUpdate(DocumentEvent e) { fillOutputPdfName(); }
-		});
 
 		tfInPdfFile.setMinimumSize(new java.awt.Dimension(150, 20));
 		tfInPdfFile.setPreferredSize(new java.awt.Dimension(150, 20));
