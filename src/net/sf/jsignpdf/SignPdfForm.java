@@ -32,9 +32,11 @@ package net.sf.jsignpdf;
 import static net.sf.jsignpdf.Constants.RES;
 
 import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.net.URL;
 import java.security.KeyStore;
+import java.util.List;
 import java.util.Set;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -43,6 +45,9 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+import javax.swing.TransferHandler;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
 import net.sf.jsignpdf.types.CertificationLevel;
@@ -134,6 +139,39 @@ public class SignPdfForm extends javax.swing.JFrame implements SignResultListene
 		rootLogger.addAppender(jTextAreaAppender);
 
 		updateFromOptions();
+
+		TransferHandler handler =   new TransferHandler() {
+		    @Override public boolean canImport(TransferHandler.TransferSupport info) {
+		        return info.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
+		    }
+
+		    @Override public boolean importData(TransferHandler.TransferSupport info) {
+		        if (!info.isDrop() || !info.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+		            return false;
+		        }
+
+		        List<File> data;
+		        try {
+		            data = (List<File>) info.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+		        } catch (Exception e) {
+		            return false;
+		        }
+
+		        String lastFile = "";
+		        for (File file : data) { lastFile = file.getPath(); }
+		        tfInPdfFile.setText(lastFile);
+
+		        return true;
+		    }
+		};
+
+		tfInPdfFile.getDocument().addDocumentListener(new DocumentListener() {
+		    @Override public void insertUpdate(DocumentEvent e)  { fillOutputPdfName(); }
+		    @Override public void removeUpdate(DocumentEvent e)  { fillOutputPdfName(); }
+		    @Override public void changedUpdate(DocumentEvent e) { fillOutputPdfName(); }
+		});
+		tfInPdfFile.setTransferHandler(handler);
+		this.setTransferHandler(handler);
 	}
 
 	/**
@@ -366,6 +404,28 @@ public class SignPdfForm extends javax.swing.JFrame implements SignResultListene
 	 */
 	void showFileChooser(final JTextField aFileField, final FileFilter aFilter, final int aType) {
 		fc.showFileChooser(aFileField, aFilter, aType);
+	}
+
+	/**
+	 * Suggest output file name.
+	 */
+	private void fillOutputPdfName() {
+	    String oldName = tfInPdfFile.getText();
+	    File f = new File(oldName);
+	    try {
+	        if (f.exists() && f.isFile()) {
+
+	            String justName = f.getName();
+	            int dotPosition = justName.lastIndexOf('.');
+	            if (dotPosition > 0) {
+	                justName = justName.substring(0,dotPosition);
+	            }
+
+	            File signedPDF = new File(f.getParentFile(),justName + "_signed.pdf");
+
+	            tfOutPdfFile.setText(signedPDF.getPath());
+	        }
+	    } catch (Exception ex) {}
 	}
 
 	/**
@@ -1254,7 +1314,11 @@ public class SignPdfForm extends javax.swing.JFrame implements SignResultListene
 
 	private void formWindowClosing(java.awt.event.WindowEvent evt) {// GEN-FIRST:event_formWindowClosing
 		storeToOptions();
-		options.storeOptions();
+		try {
+		    options.storeOptions();
+		} catch (Exception e) {
+		    // boohoo, we cannot store config, but we need to quit  !!!
+		}
 		PKCS11Utils.unregisterProvider(Signer.pkcs11ProviderName);
 	}// GEN-LAST:event_formWindowClosing
 
